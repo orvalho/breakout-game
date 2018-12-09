@@ -20,6 +20,15 @@ let ballDX = 1;
 let ballDY = -3;
 const ballRadius = 10;
 
+// paddle variables
+const paddleWidth = 75;
+const paddleHeight = 15;
+let paddleX = (canvas.width - paddleWidth) / 2;
+
+// arrow keys variables
+let leftArrowKeyPressed = false;
+let rightArrowKeyPressed = false;
+
 // game components
 function drawBall() {
   ctx.beginPath();
@@ -29,9 +38,18 @@ function drawBall() {
   ctx.closePath();
 }
 
+function drawPaddle() {
+  ctx.beginPath();
+  ctx.rect(paddleX, canvas.height - paddleHeight - 5, paddleWidth, paddleHeight);
+  ctx.fillStyle = red;
+  ctx.fill();
+  ctx.closePath();
+}
+
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   drawBall();
+  drawPaddle();
 
   // bounce off left and right
   if(ballX + ballDX + ballRadius > canvas.width || ballX + ballDX - ballRadius < 0) {
@@ -46,7 +64,35 @@ function draw() {
   // move ball
   ballX += ballDX;
   ballY += ballDY;
+
+  // control paddle
+  if(rightArrowKeyPressed && paddleX + paddleWidth < canvas.width) {
+    paddleX += 7;
+  } else if(leftArrowKeyPressed && paddleX > 0) {
+    paddleX -= 7;
+  }
+
   requestAnimationFrame(draw);
+}
+
+document.addEventListener('keydown', keyDownHandler);
+document.addEventListener('keyup', keyUpHandler);
+
+function keyDownHandler(e) {
+    if(e.keyCode === 39) {
+      rightArrowKeyPressed = true;
+      console.log('right key is pressed');
+    } else if(e.keyCode === 37) {
+      leftArrowKeyPressed = true;
+    }
+}
+
+function keyUpHandler(e) {
+    if(e.keyCode === 39) {
+      rightArrowKeyPressed = false;
+    } else if(e.keyCode === 37) {
+      leftArrowKeyPressed = false;
+    }
 }
 
 draw();
