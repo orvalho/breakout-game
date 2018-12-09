@@ -15,14 +15,15 @@ const purple   = bodyStyles.getPropertyValue('--purple');
 
 // ball variables
 let ballX = canvas.width / 2;
-let ballY = canvas. height - 30;
-const ballDX = 1;
-const ballDY = -3;
+let ballY = canvas.height - 30;
+let ballDX = 1;
+let ballDY = -3;
+const ballRadius = 10;
 
 // game components
 function drawBall() {
   ctx.beginPath();
-  ctx.arc(ballX, ballY, 10, 0, Math.PI * 2);
+  ctx.arc(ballX, ballY, ballRadius, 0, Math.PI * 2);
   ctx.fillStyle = purple;
   ctx.fill();
   ctx.closePath();
@@ -31,6 +32,18 @@ function drawBall() {
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   drawBall();
+
+  // bounce off left and right
+  if(ballX + ballDX + ballRadius > canvas.width || ballX + ballDX - ballRadius < 0) {
+    ballDX = -ballDX;
+  }
+
+  // bounce off top
+  if(ballY + ballDY - ballRadius < 0) {
+    ballDY = -ballDY;
+  }
+
+  // move ball
   ballX += ballDX;
   ballY += ballDY;
   requestAnimationFrame(draw);
