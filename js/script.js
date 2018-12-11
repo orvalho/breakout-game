@@ -39,13 +39,31 @@ let bricks = [];
 for(let r = 0; r < brickRowCount; r++) {
   bricks[r] = [];
   for(let c = 0; c < brickColumnCount; c++) {
-    bricks[r][c] = { x: '', y: '' };
+    bricks[r][c] = { x: '', y: '', status: 1 }; // status 1 - paint the brick
   }
 }
 
 // arrow keys variables
 let leftArrowKeyPressed = false;
 let rightArrowKeyPressed = false;
+
+// detect if ball has collided with any of the bricks
+function collisionDetection() {
+  for(let r = 0; r < brickRowCount; r++) {
+    for(let c = 0; c < brickColumnCount; c++) {
+      if(bricks[r][c].status === 1) {
+        // check if the center of the ball is colliding with any of the given bricks
+        if(ballX > bricks[r][c].x
+           && ballX < bricks[r][c].x + brickWidth
+           && ballY > bricks[r][c].y
+           && ballY < bricks[r][c].y + brickHeight) {
+          ballDY = -ballDY;
+          bricks[r][c].status = 0; // status 0 - don't paint the brick
+        }
+      }
+    }
+  }
+}
 
 // game components
 function drawBricks() {
@@ -64,14 +82,16 @@ function drawBricks() {
     }
     // drawing bricks
     for(let c = 0; c < brickColumnCount; c++) {
-      let brickX = c * (brickWidth + brickPadding) + brickOffsetLeft;
-      let brickY = r * (brickHeight + brickPadding) + brickOffsetTop;
-      bricks[r][c].x = brickX;
-      bricks[r][c].y = brickY;
-      ctx.beginPath();
-      ctx.rect(brickX, brickY, brickWidth, brickHeight);
-      ctx.fill();
-      ctx.closePath();
+      if(bricks[r][c].status === 1) {
+        let brickX = c * (brickWidth + brickPadding) + brickOffsetLeft;
+        let brickY = r * (brickHeight + brickPadding) + brickOffsetTop;
+        bricks[r][c].x = brickX;
+        bricks[r][c].y = brickY;
+        ctx.beginPath();
+        ctx.rect(brickX, brickY, brickWidth, brickHeight);
+        ctx.fill();
+        ctx.closePath();
+      }
     }
   }
 }
@@ -97,6 +117,7 @@ function draw() {
   drawBricks();
   drawBall();
   drawPaddle();
+  collisionDetection();
 
   // bounce off left and right
   if(ballX + ballDX + ballRadius > canvas.width || ballX + ballDX - ballRadius < 0) {
