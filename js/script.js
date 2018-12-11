@@ -60,6 +60,15 @@ function draw() {
   if(ballY + ballDY - ballRadius < 0) {
     ballDY = -ballDY;
   }
+  // bounce off paddle
+  else if(ballX > paddleX && ballX < paddleX + paddleWidth && ballY + ballDY + ballRadius > canvas.height - paddleHeight) {
+    ballDY = -ballDY;
+  }
+  // game over if the ball collides with the bottom edge of the canvas
+  else if(ballY + ballDY + ballRadius > canvas.height) {
+    alert('GAME OVER');
+    document.location.reload();
+  }
 
   // move ball
   ballX += ballDX;
@@ -81,7 +90,6 @@ document.addEventListener('keyup', keyUpHandler);
 function keyDownHandler(e) {
     if(e.keyCode === 39) {
       rightArrowKeyPressed = true;
-      console.log('right key is pressed');
     } else if(e.keyCode === 37) {
       leftArrowKeyPressed = true;
     }
