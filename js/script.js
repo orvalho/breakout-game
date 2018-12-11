@@ -25,11 +25,57 @@ const paddleWidth = 75;
 const paddleHeight = 15;
 let paddleX = (canvas.width - paddleWidth) / 2;
 
+// brick variables
+const brickRowCount = 3;
+const brickColumnCount = 8;
+const brickOffsetTop = 20; // setting a top and left offset so they won't start being drawn right from the edge of the canvas
+const brickOffsetLeft = 30;
+const brickPadding = 10; // setting padding between the bricks so they won't touch each other
+const brickHeight = 20;
+const brickWidth = (canvas.width - 2 * brickOffsetLeft + brickPadding) / brickColumnCount - brickPadding;
+
+// setting up array to hold the x and y position to paint each brick on the screen
+let bricks = [];
+for(let r = 0; r < brickRowCount; r++) {
+  bricks[r] = [];
+  for(let c = 0; c < brickColumnCount; c++) {
+    bricks[r][c] = { x: '', y: '' };
+  }
+}
+
 // arrow keys variables
 let leftArrowKeyPressed = false;
 let rightArrowKeyPressed = false;
 
 // game components
+function drawBricks() {
+  for(let r = 0; r < brickRowCount; r++) {
+    // coloring brick rows
+    switch(r) {
+      case 0:
+        ctx.fillStyle = purple;
+        break;
+      case 1:
+        ctx.fillStyle = burgundy;
+        break;
+      case 2:
+        ctx.fillStyle = red;
+        break;
+    }
+    // drawing bricks
+    for(let c = 0; c < brickColumnCount; c++) {
+      let brickX = c * (brickWidth + brickPadding) + brickOffsetLeft;
+      let brickY = r * (brickHeight + brickPadding) + brickOffsetTop;
+      bricks[r][c].x = brickX;
+      bricks[r][c].y = brickY;
+      ctx.beginPath();
+      ctx.rect(brickX, brickY, brickWidth, brickHeight);
+      ctx.fill();
+      ctx.closePath();
+    }
+  }
+}
+
 function drawBall() {
   ctx.beginPath();
   ctx.arc(ballX, ballY, ballRadius, 0, Math.PI * 2);
@@ -48,6 +94,7 @@ function drawPaddle() {
 
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawBricks();
   drawBall();
   drawPaddle();
 
