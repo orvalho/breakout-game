@@ -18,3 +18,9 @@
   margin: 0 auto;
   margin-top: 50px;
 }
+
+@font-face {
+  font-family: fontOne;
+  src: url(../fonts/fontOne.ttf);
+  font-weight: 400;
+}

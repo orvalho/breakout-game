@@ -28,7 +28,7 @@ let paddleX = (canvas.width - paddleWidth) / 2;
 // brick variables
 const brickRowCount = 3;
 const brickColumnCount = 8;
-const brickOffsetTop = 20; // setting a top and left offset so they won't start being drawn right from the edge of the canvas
+const brickOffsetTop = 25; // setting a top and left offset so bricks won't start being drawn right from the edge of the canvas
 const brickOffsetLeft = 30;
 const brickPadding = 10; // setting padding between the bricks so they won't touch each other
 const brickHeight = 20;
@@ -47,6 +47,10 @@ for(let r = 0; r < brickRowCount; r++) {
 let leftArrowKeyPressed = false;
 let rightArrowKeyPressed = false;
 
+// score variables
+let score = 0;
+const scoreForOneBrickDestruction = 100;
+
 // detect if ball has collided with any of the bricks
 function collisionDetection() {
   for(let r = 0; r < brickRowCount; r++) {
@@ -59,10 +63,21 @@ function collisionDetection() {
            && ballY < bricks[r][c].y + brickHeight) {
           ballDY = -ballDY;
           bricks[r][c].status = 0; // status 0 - don't paint the brick
+          score += scoreForOneBrickDestruction;
+          if(score === brickRowCount * brickColumnCount * scoreForOneBrickDestruction) {
+            alert(`You won! Congratulations! Your score: ${score}.`);
+            document.location.reload();
+          }
         }
       }
     }
   }
+}
+
+function drawScore() {
+  ctx.font = '25px fontOne';
+  ctx.fillStyle = purple;
+  ctx.fillText(`Score: ${score}`, 10, 18);
 }
 
 // game components
@@ -117,6 +132,7 @@ function draw() {
   drawBricks();
   drawBall();
   drawPaddle();
+  drawScore()
   collisionDetection();
 
   // bounce off left and right
