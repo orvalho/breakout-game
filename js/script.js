@@ -170,6 +170,7 @@ function draw() {
 
 document.addEventListener('keydown', keyDownHandler);
 document.addEventListener('keyup', keyUpHandler);
+document.addEventListener('mousemove', mouseMoveHandler);
 
 function keyDownHandler(e) {
     if(e.keyCode === 39) {
@@ -185,6 +186,13 @@ function keyUpHandler(e) {
     } else if(e.keyCode === 37) {
       leftArrowKeyPressed = false;
     }
+}
+
+function mouseMoveHandler(e) {
+  let relativeX = e.clientX - canvas.offsetLeft;
+  if(relativeX > paddleWidth / 2 && relativeX < canvas.width - paddleWidth / 2) {
+    paddleX = relativeX - paddleWidth / 2;
+  }
 }
 
 draw();
