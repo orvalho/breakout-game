@@ -51,6 +51,8 @@ let rightArrowKeyPressed = false;
 let score = 0;
 const scoreForOneBrickDestruction = 100;
 
+let lives = 3;
+
 // detect if ball has collided with any of the bricks
 function collisionDetection() {
   for(let r = 0; r < brickRowCount; r++) {
@@ -78,6 +80,12 @@ function drawScore() {
   ctx.font = '25px fontOne';
   ctx.fillStyle = purple;
   ctx.fillText(`Score: ${score}`, 10, 18);
+}
+
+function drawLives() {
+  ctx.font = '25px fontOne';
+  ctx.fillStyle = purple;
+  ctx.fillText(`Lives: ${lives}`, canvas.width - 70, 18);
 }
 
 // game components
@@ -132,7 +140,8 @@ function draw() {
   drawBricks();
   drawBall();
   drawPaddle();
-  drawScore()
+  drawScore();
+  drawLives();
   collisionDetection();
 
   // bounce off left and right
@@ -148,10 +157,22 @@ function draw() {
   else if(ballX > paddleX && ballX < paddleX + paddleWidth && ballY + ballDY + ballRadius > canvas.height - paddleHeight) {
     ballDY = -ballDY;
   }
-  // game over if the ball collides with the bottom edge of the canvas
+  // if the ball collides with the bottom edge of the canvas
   else if(ballY + ballDY + ballRadius > canvas.height) {
-    alert('GAME OVER');
-    document.location.reload();
+    lives--;
+    // and there are no more lives - game over
+    if(!lives) {
+      alert('GAME OVER');
+      document.location.reload();
+    }
+    // if there are still some lives left - reset the position of the ball and the paddle and the movement of the ball
+    else {
+      ballX = canvas.width / 2;
+      ballY = canvas.height - 30;
+      ballDX = 1;
+      ballDY = -3;
+      paddleX = (canvas.width - paddleWidth) / 2;
+    }
   }
 
   // move ball
