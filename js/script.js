@@ -216,4 +216,105 @@ function mouseMoveHandler(e) {
   }
 }
 
-draw();
+/******************************************************************************/
+// MAIN SCENE
+
+function drawMainScene() {
+  drawBackground();
+  // draw decorations
+  drawLineOfCircles(20, true);
+  drawLineOfCircles(380, true);
+  drawLineOfCircles(15, false);
+  drawLineOfCircles(585, false);
+  // preload fonts and only then draw name of game and buttons
+  document.fonts.load('10pt fontTwo').then(drawGameName);
+  document.fonts.load('10pt fontOne').then(drawStartButton);
+  document.fonts.load('10pt fontOne').then(drawHelpButton);
+}
+
+function drawBackground() {
+  ctx.beginPath();
+  ctx.rect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = purple;
+  ctx.fill();
+  ctx.closePath();
+}
+
+function drawGameName() {
+  ctx.font = `80px fontTwo`;
+  ctx.fillStyle = yellow;
+  ctx.textAlign = 'center';
+  ctx.fillText(`BREAKOUT`, canvas.width / 2, canvas.height / 5 * 2);
+}
+
+const startButtonX = canvas.width / 5 * 2;
+const startButtonY = canvas.height / 20 * 11;
+const startButtonWidth = canvas.width / 5;
+const startButtonHeight = canvas.height / 10;
+
+function drawStartButton() {
+  ctx.beginPath();
+  ctx.rect(startButtonX, startButtonY, startButtonWidth, startButtonHeight);
+  ctx.fillStyle = yellow;
+  ctx.fill();
+  ctx.closePath();
+  ctx.textAlign = 'center';
+  ctx.fillStyle = purple;
+  ctx.font = '50px fontOne';
+  ctx.fillText('start', canvas.width / 2, startButtonY + 30);
+}
+
+const helpButtonX = startButtonX;
+const helpButtonY = canvas.height / 10 * 7;
+const helpButtonWidth = startButtonWidth;
+const helpButtonHeight = startButtonHeight;
+
+function drawHelpButton() {
+  ctx.beginPath();
+  ctx.rect(helpButtonX, helpButtonY, helpButtonWidth, helpButtonHeight);
+  ctx.fillStyle = yellow;
+  ctx.fill();
+  ctx.closePath();
+  ctx.textAlign = 'center';
+  ctx.fillStyle = purple;
+  ctx.font = '50px fontOne';
+  ctx.fillText('help', canvas.width / 2, helpButtonY + 30);
+}
+
+function drawLineOfCircles(a, horizontal) {
+  for(let i = 0;; i++) {
+    ctx.beginPath();
+    // case 1: draw horizontal line
+    if(horizontal) {
+      let x = 30 * i + 15;
+      if(x > canvas.width) {
+        break;
+      }
+      ctx.arc(x, a, 3, 0, Math.PI * 2);
+    }
+    // case 2: draw vertical line
+    else {
+      y = 30 * i + 20;
+      if(y > canvas.height) {
+        break;
+      }
+      ctx.arc(a, y, 3, 0, Math.PI * 2);
+    }
+    ctx.fillStyle = yellow;
+    ctx.fill();
+    ctx.closePath();
+  }
+}
+
+drawMainScene();
+
+document.addEventListener('click', startButtonkHandler);
+
+function startButtonkHandler(e) {
+  if(e.clientX > startButtonX + canvas.offsetLeft
+    && e.clientX < startButtonX + startButtonWidth + canvas.offsetLeft
+    && e.clientY > startButtonY + canvas.offsetTop
+    && e.clientY < startButtonY + startButtonHeight + canvas.offsetTop) {
+    draw();
+  }
+}

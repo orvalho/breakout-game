@@ -19,8 +19,14 @@
   margin-top: 50px;
 }
 
+/* fonts */
 @font-face {
   font-family: fontOne;
   src: url(../fonts/fontOne.ttf);
   font-weight: 400;
+}
+
+@font-face {
+  font-family: fontTwo;
+  src: url(../fonts/fontTwo.ttf);
 }
