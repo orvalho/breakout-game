@@ -294,7 +294,7 @@ function drawLineOfCircles(a, horizontal) {
     }
     // case 2: draw vertical line
     else {
-      y = 30 * i + 20;
+      let y = 30 * i + 20;
       if(y > canvas.height) {
         break;
       }
@@ -308,13 +308,99 @@ function drawLineOfCircles(a, horizontal) {
 
 drawMainScene();
 
-document.addEventListener('click', startButtonkHandler);
+document.addEventListener('click', startButtonHandler);
 
-function startButtonkHandler(e) {
+function startButtonHandler(e) {
   if(e.clientX > startButtonX + canvas.offsetLeft
     && e.clientX < startButtonX + startButtonWidth + canvas.offsetLeft
     && e.clientY > startButtonY + canvas.offsetTop
     && e.clientY < startButtonY + startButtonHeight + canvas.offsetTop) {
     draw();
+  }
+}
+
+/******************************************************************************/
+// HELP SCENE
+
+function drawHelpScene() {
+  drawHelpSceneBackground();
+  // draw heading
+  ctx.textAlign = 'center';
+  ctx.fillStyle = purple;
+  ctx.font = '50px fontOne';
+  ctx.fillText('HOW TO PLAY:', canvas.width / 2, 80);
+  // draw text
+  ctx.font = '30px fontOne';
+  wrapText(text, x, y, maxWidth, lineHeight);
+  // draw back arrow
+  ctx.beginPath();
+  ctx.strokeStyle = purple;
+  ctx.lineWidth = 10;
+  // 1st line
+  ctx.moveTo(backArrow1, backArrow2);
+  ctx.lineTo(backArrow3, backArrow2);
+  // 2nd line
+  ctx.moveTo(backArrow2, backArrow1);
+  ctx.lineTo(backArrow2, backArrow3);
+  // 3rd line
+  ctx.moveTo(backArrow2, backArrow2);
+  ctx.lineTo(backArrow3, backArrow3);
+  ctx.stroke();
+  ctx.closePath();
+}
+
+function drawHelpSceneBackground() {
+  ctx.beginPath();
+  ctx.rect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = orange;
+  ctx.fill();
+  ctx.closePath();
+}
+
+const backArrow1 = 40;
+const backArrow2 = 45;
+const backArrow3 = 80;
+
+function wrapText(text, x, y, maxWidth, lineHeight) {
+  let words = text.split(' ');
+  let line = '';
+  for(let i = 0; i < words.length; i++) {
+    let testLine = `${line} ${words[i]} `;
+    let testWidth = ctx.measureText(testLine).width;
+    if(testWidth > maxWidth && i > 0) {
+      ctx.fillText(line, x, y);
+      line = `${words[i]} `;
+      y += lineHeight;
+    } else {
+      line = testLine;
+    }
+  }
+  ctx.fillText(line, x, y);
+}
+
+const maxWidth = 0.8 * canvas.width;
+const lineHeight = 25;
+let x = canvas.width / 2;
+let y = 150;
+const text = "Breakout begins with 3 rows of bricks. Using a single ball, you must knock down as many bricks as possible by using the walls and/or the paddle below to ricochet the ball against the bricks and eliminate them. If your paddle misses the ball's rebound, you will lose a life. You have three lives. Let the game begin!";
+
+document.addEventListener('click', helpButtonHandler);
+document.addEventListener('click', backButtonHandler);
+
+function helpButtonHandler(e) {
+  if(e.clientX > helpButtonX + canvas.offsetLeft
+    && e.clientX < helpButtonX + helpButtonWidth + canvas.offsetLeft
+    && e.clientY > helpButtonY + canvas.offsetTop
+    && e.clientY < helpButtonY + helpButtonHeight + canvas.offsetTop) {
+    drawHelpScene();
+  }
+}
+
+function backButtonHandler(e) {
+  if(e.clientX > backArrow1 + canvas.offsetLeft
+    && e.clientX < backArrow1 + backArrow2 + canvas.offsetLeft
+    && e.clientY > backArrow1 + canvas.offsetTop
+    && e.clientY < backArrow1 + backArrow2 + canvas.offsetTop) {
+    drawMainScene();
   }
 }
