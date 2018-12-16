@@ -162,8 +162,8 @@ function draw() {
     lives--;
     // and there are no more lives - game over
     if(!lives) {
-      alert('GAME OVER');
-      document.location.reload();
+      drawGameOverScene();
+      return;
     }
     // if there are still some lives left - reset the position of the ball and the paddle and the movement of the ball
     else {
@@ -217,9 +217,12 @@ function mouseMoveHandler(e) {
 }
 
 /******************************************************************************/
+let scene;
+
 // MAIN SCENE
 
 function drawMainScene() {
+  scene = 'main scene';
   drawBackground();
   // draw decorations
   drawLineOfCircles(20, true);
@@ -314,7 +317,8 @@ function startButtonHandler(e) {
   if(e.clientX > startButtonX + canvas.offsetLeft
     && e.clientX < startButtonX + startButtonWidth + canvas.offsetLeft
     && e.clientY > startButtonY + canvas.offsetTop
-    && e.clientY < startButtonY + startButtonHeight + canvas.offsetTop) {
+    && e.clientY < startButtonY + startButtonHeight + canvas.offsetTop
+    && scene === 'main scene') {
     draw();
   }
 }
@@ -402,5 +406,69 @@ function backButtonHandler(e) {
     && e.clientY > backArrow1 + canvas.offsetTop
     && e.clientY < backArrow1 + backArrow2 + canvas.offsetTop) {
     drawMainScene();
+  }
+}
+
+/******************************************************************************/
+// GAME OVER SCENE
+
+function drawGameOverScene() {
+  scene = 'game over scene';
+  drawGameOverSceneBackground();
+  // draw heading
+  ctx.textAlign = 'center';
+  ctx.fillStyle = yellow;
+  ctx.font = '70px fontTwo';
+  ctx.fillText('GAME OVER', canvas.width / 2, 150);
+  drawPlayAgainButton();
+}
+
+function drawGameOverSceneBackground() {
+  ctx.beginPath();
+  ctx.rect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = red;
+  ctx.fill();
+  ctx.closePath();
+}
+
+function drawPlayAgainButton() {
+  ctx.beginPath();
+  ctx.rect(playAgainButtonX, playAgainButtonY, playAgainButtonWidth, playAgainButtonHeight);
+  ctx.fillStyle = yellow;
+  ctx.fill();
+  ctx.closePath();
+  ctx.textAlign = 'center';
+  ctx.fillStyle = red;
+  ctx.font = '50px fontOne';
+  ctx.fillText('play again', canvas.width / 2, playAgainButtonY + 30);
+}
+
+const playAgainButtonX = canvas.width / 10 * 3;
+const playAgainButtonY = canvas.height / 20 * 11;
+const playAgainButtonWidth = canvas.width / 5 * 2;
+const playAgainButtonHeight = canvas.height / 10;
+
+document.addEventListener('click', playAgainButtonHandler);
+
+function playAgainButtonHandler(e) {
+  if(e.clientX > playAgainButtonX + canvas.offsetLeft
+    && e.clientX < playAgainButtonX + playAgainButtonWidth + canvas.offsetLeft
+    && e.clientY > playAgainButtonY + canvas.offsetTop
+    && e.clientY < playAgainButtonY + playAgainButtonHeight + canvas.offsetTop
+    && scene === 'game over scene') {
+      // reset
+      ballX = canvas.width / 2;
+      ballY = canvas.height - 30;
+      ballDX = 1;
+      ballDY = -3;
+      paddleX = (canvas.width - paddleWidth) / 2;
+      lives = 3;
+      score = 0;
+      for(let r = 0; r < brickRowCount; r++) {
+        for(let c = 0; c < brickColumnCount; c++) {
+          bricks[r][c].status = 1; // status 1 - paint the brick
+        }
+      }
+    draw();
   }
 }
