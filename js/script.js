@@ -66,10 +66,6 @@ function collisionDetection() {
           ballDY = -ballDY;
           bricks[r][c].status = 0; // status 0 - don't paint the brick
           score += scoreForOneBrickDestruction;
-          if(score === brickRowCount * brickColumnCount * scoreForOneBrickDestruction) {
-            alert(`You won! Congratulations! Your score: ${score}.`);
-            document.location.reload();
-          }
         }
       }
     }
@@ -143,6 +139,12 @@ function draw() {
   drawScore();
   drawLives();
   collisionDetection();
+
+  // draw win scene
+  if(score === brickRowCount * brickColumnCount * scoreForOneBrickDestruction) {
+    drawWinScene();
+    return;
+  }
 
   // bounce off left and right
   if(ballX + ballDX + ballRadius > canvas.width || ballX + ballDX - ballRadius < 0) {
@@ -312,6 +314,7 @@ function drawLineOfCircles(a, horizontal) {
 drawMainScene();
 
 document.addEventListener('click', startButtonHandler);
+document.addEventListener('click', helpButtonHandler);
 
 function startButtonHandler(e) {
   if(e.clientX > startButtonX + canvas.offsetLeft
@@ -323,6 +326,15 @@ function startButtonHandler(e) {
   }
 }
 
+function helpButtonHandler(e) {
+  if(e.clientX > helpButtonX + canvas.offsetLeft
+    && e.clientX < helpButtonX + helpButtonWidth + canvas.offsetLeft
+    && e.clientY > helpButtonY + canvas.offsetTop
+    && e.clientY < helpButtonY + helpButtonHeight + canvas.offsetTop
+    && scene === 'main scene') {
+    drawHelpScene();
+  }
+}
 /******************************************************************************/
 // HELP SCENE
 
@@ -388,17 +400,7 @@ let x = canvas.width / 2;
 let y = 150;
 const text = "Breakout begins with 3 rows of bricks. Using a single ball, you must knock down as many bricks as possible by using the walls and/or the paddle below to ricochet the ball against the bricks and eliminate them. If your paddle misses the ball's rebound, you will lose a life. You have three lives. Let the game begin!";
 
-document.addEventListener('click', helpButtonHandler);
 document.addEventListener('click', backButtonHandler);
-
-function helpButtonHandler(e) {
-  if(e.clientX > helpButtonX + canvas.offsetLeft
-    && e.clientX < helpButtonX + helpButtonWidth + canvas.offsetLeft
-    && e.clientY > helpButtonY + canvas.offsetTop
-    && e.clientY < helpButtonY + helpButtonHeight + canvas.offsetTop) {
-    drawHelpScene();
-  }
-}
 
 function backButtonHandler(e) {
   if(e.clientX > backArrow1 + canvas.offsetLeft
@@ -456,6 +458,97 @@ function playAgainButtonHandler(e) {
     && e.clientY > playAgainButtonY + canvas.offsetTop
     && e.clientY < playAgainButtonY + playAgainButtonHeight + canvas.offsetTop
     && scene === 'game over scene') {
+      // reset
+      ballX = canvas.width / 2;
+      ballY = canvas.height - 30;
+      ballDX = 1;
+      ballDY = -3;
+      paddleX = (canvas.width - paddleWidth) / 2;
+      lives = 3;
+      score = 0;
+      for(let r = 0; r < brickRowCount; r++) {
+        for(let c = 0; c < brickColumnCount; c++) {
+          bricks[r][c].status = 1; // status 1 - paint the brick
+        }
+      }
+    draw();
+  }
+}
+
+/******************************************************************************/
+// WIN SCENE
+
+function drawWinScene() {
+  scene = 'win scene';
+  drawWinSceneBackground();
+  drawBallsAtRandomPlace();
+  // draw text
+  ctx.textAlign = 'center';
+  ctx.fillStyle = yellow;
+  // line One
+  ctx.font = '80px fontTwo';
+  ctx.fillText(`You won!`, canvas.width / 2, 150);
+  // line Two
+  ctx.font = '40px fontTwo';
+  ctx.fillText(`Congratulations!`, canvas.width / 2, 210);
+  // line Three
+  ctx.font = '20px fontTwo';
+  ctx.fillText(`Your score: ${score}.`, canvas.width / 2, 250);
+  drawPlayAgainFromWinSceneButton();
+}
+
+function drawWinSceneBackground() {
+  ctx.beginPath();
+  ctx.rect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = burgundy;
+  ctx.fill();
+  ctx.closePath();
+}
+
+function drawBallsAtRandomPlace() {
+  for(let i = 0; i < 200 ; i++) {
+    let randomX = Math.floor(Math.random() * 600 + 1);
+    let randomY = Math.floor(Math.random() * 400 + 1);
+
+    ctx.beginPath();
+    ctx.arc(randomX, randomY, 4, 0, Math.PI * 2);
+    ctx.fillStyle = yellow;
+    ctx.fill();
+    ctx.closePath();
+
+    ctx.beginPath();
+    ctx.arc(randomX, randomY, 2, 0, Math.PI * 2);
+    ctx.fillStyle = burgundy;
+    ctx.fill();
+    ctx.closePath();
+  }
+}
+
+function drawPlayAgainFromWinSceneButton() {
+  ctx.beginPath();
+  ctx.rect(playAgainFromWinSceneButtonX, playAgainFromWinSceneButtonY, playAgainFromWinSceneButtonWidth, playAgainFromWinSceneButtonHeight);
+  ctx.fillStyle = yellow;
+  ctx.fill();
+  ctx.closePath();
+  ctx.textAlign = 'center';
+  ctx.fillStyle = burgundy;
+  ctx.font = '50px fontOne';
+  ctx.fillText('play again', canvas.width / 2, playAgainFromWinSceneButtonY + 30);
+}
+
+const playAgainFromWinSceneButtonX = canvas.width / 10 * 3;
+const playAgainFromWinSceneButtonY = canvas.height / 4 * 3;
+const playAgainFromWinSceneButtonWidth = canvas.width / 5 * 2;
+const playAgainFromWinSceneButtonHeight = canvas.height / 10;
+
+document.addEventListener('click', playAgainFromWinSceneButtonHandler);
+
+function playAgainFromWinSceneButtonHandler(e) {
+  if(e.clientX > playAgainFromWinSceneButtonX + canvas.offsetLeft
+    && e.clientX < playAgainFromWinSceneButtonX + playAgainFromWinSceneButtonWidth + canvas.offsetLeft
+    && e.clientY > playAgainFromWinSceneButtonY + canvas.offsetTop
+    && e.clientY < playAgainFromWinSceneButtonY + playAgainFromWinSceneButtonHeight + canvas.offsetTop
+    && scene === 'win scene') {
       // reset
       ballX = canvas.width / 2;
       ballY = canvas.height - 30;
