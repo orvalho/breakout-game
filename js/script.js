@@ -1,567 +1,607 @@
-const canvas = document.getElementById('myCanvas');
-const ctx = canvas.getContext('2d');
+'use strict';
+const canvas = document.getElementById('gameCanvas'),
+         ctx = canvas.getContext('2d');
 
-// canvas dimensions
 canvas.width = 600;
 canvas.height = 400;
 
-// colors
-const bodyStyles = window.getComputedStyle(document.body);
-const yellow   = bodyStyles.getPropertyValue('--yellow');
-const orange   = bodyStyles.getPropertyValue('--orange');
-const red      = bodyStyles.getPropertyValue('--red');
-const burgundy = bodyStyles.getPropertyValue('--burgundy');
-const purple   = bodyStyles.getPropertyValue('--purple');
+const colors = {
+  yellow: 'rgb(247, 189, 0)',
+  orange: 'rgb(247, 84, 49)',
+  red: 'rgb(193, 0, 55)',
+  burgundy: 'rgb(139, 12, 60)',
+  purple: 'rgb(84, 23, 67)'
+};
 
-// ball variables
-let ballX = canvas.width / 2;
-let ballY = canvas.height - 30;
-let ballDX = 1;
-let ballDY = -3;
-const ballRadius = 10;
+function mainLoop() {
+  game.background.draw();
+  view.drawBricks();
+  view.drawBall();
+  view.drawPaddle();
+  view.drawScore();
+  view.drawLives();
+  game.ball.move();
+  game.ball.bounceOff();
+  game.paddle.move();
+  game.bricks.detectCollision();
 
-// paddle variables
-const paddleWidth = 75;
-const paddleHeight = 15;
-let paddleX = (canvas.width - paddleWidth) / 2;
-
-// brick variables
-const brickRowCount = 3;
-const brickColumnCount = 8;
-const brickOffsetTop = 25; // setting a top and left offset so bricks won't start being drawn right from the edge of the canvas
-const brickOffsetLeft = 30;
-const brickPadding = 10; // setting padding between the bricks so they won't touch each other
-const brickHeight = 20;
-const brickWidth = (canvas.width - 2 * brickOffsetLeft + brickPadding) / brickColumnCount - brickPadding;
-
-// setting up array to hold the x and y position to paint each brick on the screen
-let bricks = [];
-for(let r = 0; r < brickRowCount; r++) {
-  bricks[r] = [];
-  for(let c = 0; c < brickColumnCount; c++) {
-    bricks[r][c] = { x: '', y: '', status: 1 }; // status 1 - paint the brick
-  }
-}
-
-// arrow keys variables
-let leftArrowKeyPressed = false;
-let rightArrowKeyPressed = false;
-
-// score variables
-let score = 0;
-const scoreForOneBrickDestruction = 100;
-
-let lives = 3;
-
-// detect if ball has collided with any of the bricks
-function collisionDetection() {
-  for(let r = 0; r < brickRowCount; r++) {
-    for(let c = 0; c < brickColumnCount; c++) {
-      if(bricks[r][c].status === 1) {
-        // check if the center of the ball is colliding with any of the given bricks
-        if(ballX > bricks[r][c].x
-           && ballX < bricks[r][c].x + brickWidth
-           && ballY > bricks[r][c].y
-           && ballY < bricks[r][c].y + brickHeight) {
-          ballDY = -ballDY;
-          bricks[r][c].status = 0; // status 0 - don't paint the brick
-          score += scoreForOneBrickDestruction;
-        }
-      }
-    }
-  }
-}
-
-function drawScore() {
-  ctx.font = '25px fontOne';
-  ctx.fillStyle = purple;
-  ctx.fillText(`Score: ${score}`, 10, 18);
-}
-
-function drawLives() {
-  ctx.font = '25px fontOne';
-  ctx.fillStyle = purple;
-  ctx.fillText(`Lives: ${lives}`, canvas.width - 70, 18);
-}
-
-// game components
-function drawBricks() {
-  for(let r = 0; r < brickRowCount; r++) {
-    // coloring brick rows
-    switch(r) {
-      case 0:
-        ctx.fillStyle = purple;
-        break;
-      case 1:
-        ctx.fillStyle = burgundy;
-        break;
-      case 2:
-        ctx.fillStyle = red;
-        break;
-    }
-    // drawing bricks
-    for(let c = 0; c < brickColumnCount; c++) {
-      if(bricks[r][c].status === 1) {
-        let brickX = c * (brickWidth + brickPadding) + brickOffsetLeft;
-        let brickY = r * (brickHeight + brickPadding) + brickOffsetTop;
-        bricks[r][c].x = brickX;
-        bricks[r][c].y = brickY;
-        ctx.beginPath();
-        ctx.rect(brickX, brickY, brickWidth, brickHeight);
-        ctx.fill();
-        ctx.closePath();
-      }
-    }
-  }
-}
-
-function drawBall() {
-  ctx.beginPath();
-  ctx.arc(ballX, ballY, ballRadius, 0, Math.PI * 2);
-  ctx.fillStyle = purple;
-  ctx.fill();
-  ctx.closePath();
-}
-
-function drawPaddle() {
-  ctx.beginPath();
-  ctx.rect(paddleX, canvas.height - paddleHeight - 5, paddleWidth, paddleHeight);
-  ctx.fillStyle = red;
-  ctx.fill();
-  ctx.closePath();
-}
-
-function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  drawBricks();
-  drawBall();
-  drawPaddle();
-  drawScore();
-  drawLives();
-  collisionDetection();
-
-  // draw win scene
-  if(score === brickRowCount * brickColumnCount * scoreForOneBrickDestruction) {
-    drawWinScene();
+  if(game.score.won()) {
+    winScene.draw();
     return;
   }
 
-  // bounce off left and right
-  if(ballX + ballDX + ballRadius > canvas.width || ballX + ballDX - ballRadius < 0) {
-    ballDX = -ballDX;
-  }
-
-  // bounce off top
-  if(ballY + ballDY - ballRadius < 0) {
-    ballDY = -ballDY;
-  }
-  // bounce off paddle
-  else if(ballX > paddleX && ballX < paddleX + paddleWidth && ballY + ballDY + ballRadius > canvas.height - paddleHeight) {
-    ballDY = -ballDY;
-  }
-  // if the ball collides with the bottom edge of the canvas
-  else if(ballY + ballDY + ballRadius > canvas.height) {
-    lives--;
-    // and there are no more lives - game over
-    if(!lives) {
-      drawGameOverScene();
+  if(game.ball.hitBottom()) {
+    game.lives.value--;
+    if(game.lives.gameOver()) {
+      gameOverScene.draw();
       return;
-    }
-    // if there are still some lives left - reset the position of the ball and the paddle and the movement of the ball
-    else {
-      ballX = canvas.width / 2;
-      ballY = canvas.height - 30;
-      ballDX = 1;
-      ballDY = -3;
-      paddleX = (canvas.width - paddleWidth) / 2;
-    }
-  }
-
-  // move ball
-  ballX += ballDX;
-  ballY += ballDY;
-
-  // control paddle
-  if(rightArrowKeyPressed && paddleX + paddleWidth < canvas.width) {
-    paddleX += 7;
-  } else if(leftArrowKeyPressed && paddleX > 0) {
-    paddleX -= 7;
-  }
-
-  requestAnimationFrame(draw);
-}
-
-document.addEventListener('keydown', keyDownHandler);
-document.addEventListener('keyup', keyUpHandler);
-document.addEventListener('mousemove', mouseMoveHandler);
-
-function keyDownHandler(e) {
-    if(e.keyCode === 39) {
-      rightArrowKeyPressed = true;
-    } else if(e.keyCode === 37) {
-      leftArrowKeyPressed = true;
-    }
-}
-
-function keyUpHandler(e) {
-    if(e.keyCode === 39) {
-      rightArrowKeyPressed = false;
-    } else if(e.keyCode === 37) {
-      leftArrowKeyPressed = false;
-    }
-}
-
-function mouseMoveHandler(e) {
-  let relativeX = e.clientX - canvas.offsetLeft;
-  if(relativeX > paddleWidth / 2 && relativeX < canvas.width - paddleWidth / 2) {
-    paddleX = relativeX - paddleWidth / 2;
-  }
-}
-
-/******************************************************************************/
-let scene;
-
-// MAIN SCENE
-
-function drawMainScene() {
-  scene = 'main scene';
-  drawBackground();
-  // draw decorations
-  drawLineOfCircles(20, true);
-  drawLineOfCircles(380, true);
-  drawLineOfCircles(15, false);
-  drawLineOfCircles(585, false);
-  // preload fonts and only then draw name of game and buttons
-  document.fonts.load('10pt fontTwo').then(drawGameName);
-  document.fonts.load('10pt fontOne').then(drawStartButton);
-  document.fonts.load('10pt fontOne').then(drawHelpButton);
-}
-
-function drawBackground() {
-  ctx.beginPath();
-  ctx.rect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = purple;
-  ctx.fill();
-  ctx.closePath();
-}
-
-function drawGameName() {
-  ctx.font = `80px fontTwo`;
-  ctx.fillStyle = yellow;
-  ctx.textAlign = 'center';
-  ctx.fillText(`BREAKOUT`, canvas.width / 2, canvas.height / 5 * 2);
-}
-
-const startButtonX = canvas.width / 5 * 2;
-const startButtonY = canvas.height / 20 * 11;
-const startButtonWidth = canvas.width / 5;
-const startButtonHeight = canvas.height / 10;
-
-function drawStartButton() {
-  ctx.beginPath();
-  ctx.rect(startButtonX, startButtonY, startButtonWidth, startButtonHeight);
-  ctx.fillStyle = yellow;
-  ctx.fill();
-  ctx.closePath();
-  ctx.textAlign = 'center';
-  ctx.fillStyle = purple;
-  ctx.font = '50px fontOne';
-  ctx.fillText('start', canvas.width / 2, startButtonY + 30);
-}
-
-const helpButtonX = startButtonX;
-const helpButtonY = canvas.height / 10 * 7;
-const helpButtonWidth = startButtonWidth;
-const helpButtonHeight = startButtonHeight;
-
-function drawHelpButton() {
-  ctx.beginPath();
-  ctx.rect(helpButtonX, helpButtonY, helpButtonWidth, helpButtonHeight);
-  ctx.fillStyle = yellow;
-  ctx.fill();
-  ctx.closePath();
-  ctx.textAlign = 'center';
-  ctx.fillStyle = purple;
-  ctx.font = '50px fontOne';
-  ctx.fillText('help', canvas.width / 2, helpButtonY + 30);
-}
-
-function drawLineOfCircles(a, horizontal) {
-  for(let i = 0;; i++) {
-    ctx.beginPath();
-    // case 1: draw horizontal line
-    if(horizontal) {
-      let x = 30 * i + 15;
-      if(x > canvas.width) {
-        break;
-      }
-      ctx.arc(x, a, 3, 0, Math.PI * 2);
-    }
-    // case 2: draw vertical line
-    else {
-      let y = 30 * i + 20;
-      if(y > canvas.height) {
-        break;
-      }
-      ctx.arc(a, y, 3, 0, Math.PI * 2);
-    }
-    ctx.fillStyle = yellow;
-    ctx.fill();
-    ctx.closePath();
-  }
-}
-
-drawMainScene();
-
-document.addEventListener('click', startButtonHandler);
-document.addEventListener('click', helpButtonHandler);
-
-function startButtonHandler(e) {
-  if(e.clientX > startButtonX + canvas.offsetLeft
-    && e.clientX < startButtonX + startButtonWidth + canvas.offsetLeft
-    && e.clientY > startButtonY + canvas.offsetTop
-    && e.clientY < startButtonY + startButtonHeight + canvas.offsetTop
-    && scene === 'main scene') {
-    draw();
-  }
-}
-
-function helpButtonHandler(e) {
-  if(e.clientX > helpButtonX + canvas.offsetLeft
-    && e.clientX < helpButtonX + helpButtonWidth + canvas.offsetLeft
-    && e.clientY > helpButtonY + canvas.offsetTop
-    && e.clientY < helpButtonY + helpButtonHeight + canvas.offsetTop
-    && scene === 'main scene') {
-    drawHelpScene();
-  }
-}
-/******************************************************************************/
-// HELP SCENE
-
-function drawHelpScene() {
-  drawHelpSceneBackground();
-  // draw heading
-  ctx.textAlign = 'center';
-  ctx.fillStyle = purple;
-  ctx.font = '50px fontOne';
-  ctx.fillText('HOW TO PLAY:', canvas.width / 2, 80);
-  // draw text
-  ctx.font = '30px fontOne';
-  wrapText(text, x, y, maxWidth, lineHeight);
-  // draw back arrow
-  ctx.beginPath();
-  ctx.strokeStyle = purple;
-  ctx.lineWidth = 10;
-  // 1st line
-  ctx.moveTo(backArrow1, backArrow2);
-  ctx.lineTo(backArrow3, backArrow2);
-  // 2nd line
-  ctx.moveTo(backArrow2, backArrow1);
-  ctx.lineTo(backArrow2, backArrow3);
-  // 3rd line
-  ctx.moveTo(backArrow2, backArrow2);
-  ctx.lineTo(backArrow3, backArrow3);
-  ctx.stroke();
-  ctx.closePath();
-}
-
-function drawHelpSceneBackground() {
-  ctx.beginPath();
-  ctx.rect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = orange;
-  ctx.fill();
-  ctx.closePath();
-}
-
-const backArrow1 = 40;
-const backArrow2 = 45;
-const backArrow3 = 80;
-
-function wrapText(text, x, y, maxWidth, lineHeight) {
-  let words = text.split(' ');
-  let line = '';
-  for(let i = 0; i < words.length; i++) {
-    let testLine = `${line} ${words[i]} `;
-    let testWidth = ctx.measureText(testLine).width;
-    if(testWidth > maxWidth && i > 0) {
-      ctx.fillText(line, x, y);
-      line = `${words[i]} `;
-      y += lineHeight;
     } else {
-      line = testLine;
+      game.ball.reset();
+      game.paddle.reset();
     }
   }
-  ctx.fillText(line, x, y);
+  requestAnimationFrame(mainLoop);
 }
 
-const maxWidth = 0.8 * canvas.width;
-const lineHeight = 25;
-let x = canvas.width / 2;
-let y = 150;
-const text = "Breakout begins with 3 rows of bricks. Using a single ball, you must knock down as many bricks as possible by using the walls and/or the paddle below to ricochet the ball against the bricks and eliminate them. If your paddle misses the ball's rebound, you will lose a life. You have three lives. Let the game begin!";
 
-document.addEventListener('click', backButtonHandler);
+/*==============================================================================
+SCENES - setup
+==============================================================================*/
 
-function backButtonHandler(e) {
-  if(e.clientX > backArrow1 + canvas.offsetLeft
-    && e.clientX < backArrow1 + backArrow2 + canvas.offsetLeft
-    && e.clientY > backArrow1 + canvas.offsetTop
-    && e.clientY < backArrow1 + backArrow2 + canvas.offsetTop) {
-    drawMainScene();
-  }
-}
+/*====================  background  ==========================================*/
+const Background = function(config) {
+  this.color = config.color || colors.red;
+};
 
-/******************************************************************************/
-// GAME OVER SCENE
-
-function drawGameOverScene() {
-  scene = 'game over scene';
-  drawGameOverSceneBackground();
-  // draw heading
-  ctx.textAlign = 'center';
-  ctx.fillStyle = yellow;
-  ctx.font = '70px fontTwo';
-  ctx.fillText('GAME OVER', canvas.width / 2, 150);
-  drawPlayAgainButton();
-}
-
-function drawGameOverSceneBackground() {
+Background.prototype.draw = function() {
   ctx.beginPath();
   ctx.rect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = red;
+  ctx.fillStyle = this.color;
   ctx.fill();
   ctx.closePath();
-}
+};
 
-function drawPlayAgainButton() {
+
+/*====================  one-liner  ===========================================*/
+const OneLiner = function(config) {
+  this.text = config.text || 'text';
+  this.textX = config.textX || canvas.width / 2;
+  this.textY = config.textY || canvas.height / 2.6;
+  this.color = config.color || colors.yellow;
+  this.textAlign = config.textAlign || 'center';
+  this.fontSize = config.fontSize || '70px';
+  this.fontFamily = config.fontFamily || 'fontTwo';
+};
+
+OneLiner.prototype.draw = function() {
+  ctx.textAlign = this.textAlign;
+  ctx.fillStyle = this.color;
+  ctx.font = `${this.fontSize} ${this.fontFamily}`;
+  ctx.fillText(this.text, this.textX, this.textY);
+};
+
+
+/*====================  button  ==============================================*/
+const Button = function(config) {
+  this.x = config.x || canvas.width / 10 * 3;
+  this.y = config.y || canvas.height / 20 * 11;
+  this.width = config.width || canvas.width / 5 * 2;
+  this.height = config.height || canvas.height / 10;
+  this.color = config.color || colors.yellow;
+  this.label = config.label || 'click me!';
+  this.labelX = config.labelX || canvas.width / 2;
+  this.labelY = config.labelY || this.y + this.height / 4 * 3;
+  this.labelAlign = config.labelAlign || 'center';
+  this.labelFontSize = config.labelFontSize || '50px';
+  this.labelFontFamily = config.labelFontFamily || 'fontOne';
+  this.labelColor = config.labelColor || colors.red;
+  this.onClick = config.onClick || function() {};
+};
+
+Button.prototype.draw = function() {
   ctx.beginPath();
-  ctx.rect(playAgainButtonX, playAgainButtonY, playAgainButtonWidth, playAgainButtonHeight);
-  ctx.fillStyle = yellow;
+  ctx.rect(this.x, this.y, this.width, this.height);
+  ctx.fillStyle = this.color;
   ctx.fill();
   ctx.closePath();
-  ctx.textAlign = 'center';
-  ctx.fillStyle = red;
-  ctx.font = '50px fontOne';
-  ctx.fillText('play again', canvas.width / 2, playAgainButtonY + 30);
-}
+  ctx.textAlign = this.labelAlign;
+  ctx.fillStyle = this.labelColor;
+  ctx.font = `${this.labelFontSize} ${this.labelFontFamily}`;
+  ctx.fillText(this.label, this.labelX, this.labelY);
+};
 
-const playAgainButtonX = canvas.width / 10 * 3;
-const playAgainButtonY = canvas.height / 20 * 11;
-const playAgainButtonWidth = canvas.width / 5 * 2;
-const playAgainButtonHeight = canvas.height / 10;
+Button.prototype.isMouseInside = function(e) {
+  return (e.clientX > this.x + canvas.offsetLeft
+       && e.clientX < this.x + this.width + canvas.offsetLeft
+       && e.clientY > this.y + canvas.offsetTop
+       && e.clientY < this.y + this.height + canvas.offsetTop);
+};
 
-document.addEventListener('click', playAgainButtonHandler);
+Button.prototype.handleMouseClick = function(e) {
+  if(this.isMouseInside(e)) {
+    this.onClick();
+  }
+};
 
-function playAgainButtonHandler(e) {
-  if(e.clientX > playAgainButtonX + canvas.offsetLeft
-    && e.clientX < playAgainButtonX + playAgainButtonWidth + canvas.offsetLeft
-    && e.clientY > playAgainButtonY + canvas.offsetTop
-    && e.clientY < playAgainButtonY + playAgainButtonHeight + canvas.offsetTop
-    && scene === 'game over scene') {
-      // reset
-      ballX = canvas.width / 2;
-      ballY = canvas.height - 30;
-      ballDX = 1;
-      ballDY = -3;
-      paddleX = (canvas.width - paddleWidth) / 2;
-      lives = 3;
-      score = 0;
-      for(let r = 0; r < brickRowCount; r++) {
-        for(let c = 0; c < brickColumnCount; c++) {
-          bricks[r][c].status = 1; // status 1 - paint the brick
+
+/*==============================================================================
+SCENES
+==============================================================================*/
+let currentScene;
+
+/*====================  playing scene  =======================================*/
+/*==============================================================================
+game constants and settings
+==============================================================================*/
+const game = {
+  background: new Background({ color: colors.yellow }),
+  ball: {
+    x: canvas.width / 2,
+    y: canvas.height - 30,
+    dx: 1,
+    dy: -3,
+    radius: 10,
+    color: colors.purple,
+    move: function() {
+      this.x += this.dx;
+      this.y += this.dy;
+    },
+    hitTop: function() {
+      return this.y + this.dy - this.radius < 0;
+    },
+    hitBottom: function() {
+      return this.y + this.dy + this.radius > canvas.height;
+    },
+    hitSideWall: function() {
+      return (this.x + this.dx - this.radius < 0 ||
+              this.x + this.dx + this.radius > canvas.width);
+    },
+    hitPaddle: function() {
+      return (this.x > game.paddle.x &&
+              this.x < game.paddle.x + game.paddle.width &&
+              this.y + this.dy + this.radius > canvas.height - game.paddle.height);
+    },
+    bounceOffTop: function() {
+      if (this.hitTop()) this.dy = -this.dy;
+    },
+    bounceOffSideWall: function() {
+      if (this.hitSideWall()) this.dx = -this.dx;
+    },
+    bounceOffPaddle: function() {
+      if (this.hitPaddle()) this.dy = -this.dy;
+    },
+    bounceOff: function() {
+      this.bounceOffTop();
+      this.bounceOffSideWall();
+      this.bounceOffPaddle();
+    },
+    reset: function() {
+      this.x = canvas.width / 2;
+      this.y = canvas.height - 30;
+      this.dx = 1;
+      this.dy = -3;
+    }
+  },
+  paddle: {
+    x: (canvas.width - 75) / 2,
+    y: canvas.height - 15 - 5, // 5 from bottom
+    width: 75,
+    height: 15,
+    color: colors.purple,
+    touchCanvasLeftEdge: function() {
+      return this.x <= 0;
+    },
+    touchCanvasRightEdge: function() {
+      return this.x + this.width >= canvas.width;
+    },
+    moveLeft: function() {
+      if(game.keys.leftKey && !this.touchCanvasLeftEdge()) this.x -= 7;
+    },
+    moveRight: function() {
+      if(game.keys.rightKey && !this.touchCanvasRightEdge()) this.x += 7;
+    },
+    move: function() {
+      this.moveLeft();
+      this.moveRight();
+    },
+    reset: function() {
+      this.x = (canvas.width - 75) / 2;
+    }
+  },
+  bricks: {
+    value: 100,  // points its worth
+    rowCount: 3,
+    columnCount: 8,
+    offsetTop: 25, // setting a top and left offset so bricks won't start being drawn right from the edge of the canvas
+    offsetLeft: 30,
+    padding: 10, // setting padding between the bricks so they won't touch each other
+    height: 20,
+    getWidth: function() {
+      return (canvas.width - 2 * this.offsetLeft + this.padding) / this.columnCount - this.padding;
+    },
+    brickList: [], // holds x, y positions and status of every brick
+    getPosition: function() {
+      for(let r = 0; r < this.rowCount; r++) {
+        for(let c = 0; c < this.columnCount; c++) {
+          this.brickList.push({
+            x: c * (this.getWidth() + this.padding) + this.offsetLeft,
+            y: r * (this.height + this.padding) + this.offsetTop,
+            status: 1 // status 1 - paint the brick, status 0 - don't paint it
+          });
         }
       }
-    draw();
-  }
-}
+    },
+    reset: function() {
+      this.brickList.forEach(function(brick) {
+        brick.status = 1;
+      });
+    },
+    detectCollision: function() {
+      this.brickList.forEach(function(brick) {
+        if (!brick.status) return;
 
-/******************************************************************************/
-// WIN SCENE
+        let inBricksColumn = game.ball.x > brick.x && game.ball.x < brick.x + game.bricks.getWidth(),
+            inBricksRow = game.ball.y > brick.y && game.ball.y < brick.y + game.bricks.height;
 
-function drawWinScene() {
-  scene = 'win scene';
-  drawWinSceneBackground();
-  drawBallsAtRandomPlace();
-  // draw text
-  ctx.textAlign = 'center';
-  ctx.fillStyle = yellow;
-  // line One
-  ctx.font = '80px fontTwo';
-  ctx.fillText(`You won!`, canvas.width / 2, 150);
-  // line Two
-  ctx.font = '40px fontTwo';
-  ctx.fillText(`Congratulations!`, canvas.width / 2, 210);
-  // line Three
-  ctx.font = '20px fontTwo';
-  ctx.fillText(`Your score: ${score}.`, canvas.width / 2, 250);
-  drawPlayAgainFromWinSceneButton();
-}
-
-function drawWinSceneBackground() {
-  ctx.beginPath();
-  ctx.rect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = burgundy;
-  ctx.fill();
-  ctx.closePath();
-}
-
-function drawBallsAtRandomPlace() {
-  for(let i = 0; i < 200 ; i++) {
-    let randomX = Math.floor(Math.random() * 600 + 1);
-    let randomY = Math.floor(Math.random() * 400 + 1);
-
-    ctx.beginPath();
-    ctx.arc(randomX, randomY, 4, 0, Math.PI * 2);
-    ctx.fillStyle = yellow;
-    ctx.fill();
-    ctx.closePath();
-
-    ctx.beginPath();
-    ctx.arc(randomX, randomY, 2, 0, Math.PI * 2);
-    ctx.fillStyle = burgundy;
-    ctx.fill();
-    ctx.closePath();
-  }
-}
-
-function drawPlayAgainFromWinSceneButton() {
-  ctx.beginPath();
-  ctx.rect(playAgainFromWinSceneButtonX, playAgainFromWinSceneButtonY, playAgainFromWinSceneButtonWidth, playAgainFromWinSceneButtonHeight);
-  ctx.fillStyle = yellow;
-  ctx.fill();
-  ctx.closePath();
-  ctx.textAlign = 'center';
-  ctx.fillStyle = burgundy;
-  ctx.font = '50px fontOne';
-  ctx.fillText('play again', canvas.width / 2, playAgainFromWinSceneButtonY + 30);
-}
-
-const playAgainFromWinSceneButtonX = canvas.width / 10 * 3;
-const playAgainFromWinSceneButtonY = canvas.height / 4 * 3;
-const playAgainFromWinSceneButtonWidth = canvas.width / 5 * 2;
-const playAgainFromWinSceneButtonHeight = canvas.height / 10;
-
-document.addEventListener('click', playAgainFromWinSceneButtonHandler);
-
-function playAgainFromWinSceneButtonHandler(e) {
-  if(e.clientX > playAgainFromWinSceneButtonX + canvas.offsetLeft
-    && e.clientX < playAgainFromWinSceneButtonX + playAgainFromWinSceneButtonWidth + canvas.offsetLeft
-    && e.clientY > playAgainFromWinSceneButtonY + canvas.offsetTop
-    && e.clientY < playAgainFromWinSceneButtonY + playAgainFromWinSceneButtonHeight + canvas.offsetTop
-    && scene === 'win scene') {
-      // reset
-      ballX = canvas.width / 2;
-      ballY = canvas.height - 30;
-      ballDX = 1;
-      ballDY = -3;
-      paddleX = (canvas.width - paddleWidth) / 2;
-      lives = 3;
-      score = 0;
-      for(let r = 0; r < brickRowCount; r++) {
-        for(let c = 0; c < brickColumnCount; c++) {
-          bricks[r][c].status = 1; // status 1 - paint the brick
+        if (inBricksColumn && inBricksRow) {
+          game.ball.dy = -game.ball.dy;
+          brick.status = 0; // status 0 - don't paint the brick
+          game.score.value += game.bricks.value;
         }
-      }
-    draw();
+      });
+    }
+  },
+  score: {
+    value: 0,
+    maxValue: function() {
+      return game.bricks.rowCount * game.bricks.columnCount * game.bricks.value;
+    },
+    reset: function() {
+      this.value = 0;
+    },
+    won: function() {
+      return this.value === this.maxValue();
+    },
+    color: colors.burgundy,
+    fontSize: '25px',
+    fontFamily: 'fontOne',
+    x: 10,
+    y: 18,
+    text: 'Score:'
+  },
+  lives: {
+    value: 3,
+    reset: function() {
+      this.value = 3;
+    },
+    gameOver: function() {
+      return this.value === 0;
+    },
+    color: colors.burgundy,
+    fontSize: '25px',
+    fontFamily: 'fontOne',
+    x: canvas.width - 70,
+    y: 18,
+    text: 'Lives:'
+  },
+  keys: {
+    leftKey: false,
+    rightKey: false,
+    leftKeyPressed: function(e) {
+      return e.key === 'ArrowLeft';
+    },
+    rightKeyPressed: function(e) {
+      return e.key === 'ArrowRight';
+    }
+  },
+  resetGame: function() {
+    game.ball.reset();
+    game.paddle.reset();
+    game.score.reset();
+    game.lives.reset();
+    game.bricks.reset();
+    mainLoop();
   }
-}
+};
+
+game.bricks.getPosition();
+
+
+/*==============================================================================
+CONTROLLER
+==============================================================================*/
+const controller = {
+  keyDown: function(e) {
+    if(game.keys.leftKeyPressed(e)) game.keys.leftKey = true;
+    if(game.keys.rightKeyPressed(e)) game.keys.rightKey = true;
+  },
+  keyUp: function(e) {
+    if(game.keys.leftKeyPressed(e)) game.keys.leftKey = false;
+    if(game.keys.rightKeyPressed(e)) game.keys.rightKey = false;
+  },
+  mouseMove: function(e) {
+    let relativeX = e.clientX - canvas.offsetLeft;
+    if(relativeX > game.paddle.width / 2 && relativeX < canvas.width - game.paddle.width / 2) {
+      game.paddle.x = relativeX - game.paddle.width / 2;
+    }
+  }
+};
+
+
+/*==============================================================================
+VIEW
+==============================================================================*/
+const view = {
+  drawBall: function() {
+    ctx.beginPath();
+    ctx.arc(game.ball.x, game.ball.y, game.ball.radius, 0, Math.PI * 2);
+    ctx.fillStyle = game.ball.color;
+    ctx.fill();
+    ctx.closePath();
+  },
+  drawPaddle: function() {
+    ctx.beginPath();
+    ctx.rect(game.paddle.x, game.paddle.y, game.paddle.width, game.paddle.height);
+    ctx.fillStyle = game.paddle.color;
+    ctx.fill();
+    ctx.closePath();
+  },
+  drawBricks: function() {
+    game.bricks.brickList.forEach(function(brick, position) {
+      // get row number
+      let rowNum;
+      if(position < game.bricks.columnCount) rowNum = 0;
+      else if(position < 2 * game.bricks.columnCount) rowNum = 1;
+      else rowNum = 2;
+      // color brick rows
+      switch(rowNum) {
+        case 0: ctx.fillStyle = colors.purple; break;
+        case 1: ctx.fillStyle = colors.burgundy; break;
+        case 2: ctx.fillStyle = colors.red; break;
+      }
+      // draw bricks
+      if(brick.status) {
+        ctx.beginPath();
+        ctx.rect(brick.x, brick.y, game.bricks.getWidth(), game.bricks.height);
+        ctx.fill();
+        ctx.closePath();
+      }
+    });
+  },
+  drawScore: function() {
+    ctx.font = `${game.score.fontSize} ${game.score.fontFamily}`;
+    ctx.fillStyle = game.score.color;
+    ctx.fillText(`${game.score.text} ${game.score.value}`, game.score.x, game.score.y);
+  },
+  drawLives: function() {
+    ctx.font = `${game.lives.fontSize} ${game.lives.fontFamily}`;
+    ctx.fillStyle = game.lives.color;
+    ctx.fillText(`${game.lives.text} ${game.lives.value}`, game.lives.x, game.lives.y);
+  },
+  setUpEventListeners: function() {
+    document.addEventListener('keydown', controller.keyDown);
+    document.addEventListener('keyup', controller.keyUp);
+    document.addEventListener('mousemove', controller.mouseMove);
+  }
+};
+
+view.setUpEventListeners();
+
+
+/*====================  game over scene  =====================================*/
+const gameOverScene = {
+  scene: 'gameOver',
+  background: new Background({}),
+  oneLiner: new OneLiner({ text: 'GAME OVER' }),
+  button: new Button({
+    label: 'play again',
+    onClick: function() { if(currentScene === gameOverScene.scene) game.resetGame() }
+  }),
+  draw: function() {
+    currentScene = this.scene;
+    this.background.draw();
+    this.oneLiner.draw();
+    this.button.draw();
+  }
+};
+
+document.addEventListener('click', gameOverScene.button.handleMouseClick.bind(gameOverScene.button));
+
+
+/*====================  win scene  ===========================================*/
+const winScene = {
+  scene: 'win',
+  background: new Background({ color: colors.burgundy }),
+  oneLiner1: new OneLiner({
+    text: 'You won!',
+    fontSize: '80px'
+  }),
+  oneLiner2: new OneLiner({
+    text: 'Congratulations!',
+    textY: canvas.height / 1.9,
+    fontSize: '40px'
+  }),
+  oneLiner3: new OneLiner({
+    text: `Your score: ${game.score.maxValue()}.`,
+    textY: canvas.height / 1.6,
+    fontSize: '20px'
+  }),
+  button: new Button({
+      y: canvas.height / 4 * 3,
+      label: 'play again',
+      labelColor: colors.burgundy,
+      onClick: function() { if(currentScene === winScene.scene) game.resetGame() }
+  }),
+  draw: function() {
+    currentScene = this.scene;
+    this.background.draw();
+    this.drawCirclesAtRandomPos();
+    this.oneLiner1.draw();
+    this.oneLiner2.draw();
+    this.oneLiner3.draw();
+    this.button.draw();
+  },
+  // for decorative purposes
+  drawCirclesAtRandomPos: function () {
+    for(let i = 0; i < 200; i++) {
+      let randomX = Math.floor(Math.random() * canvas.width + 1);
+      let randomY = Math.floor(Math.random() * canvas.height + 1);
+
+      ctx.beginPath();
+      ctx.arc(randomX, randomY, 4, 0, Math.PI * 2);
+      ctx.fillStyle = colors.yellow;
+      ctx.fill();
+      ctx.closePath();
+
+      ctx.beginPath();
+      ctx.arc(randomX, randomY, 2, 0, Math.PI * 2);
+      ctx.fillStyle = colors.burgundy;
+      ctx.fill();
+      ctx.closePath();
+    }
+  }
+};
+
+document.addEventListener('click', winScene.button.handleMouseClick.bind(winScene.button));
+
+
+/*====================  main scene  ==========================================*/
+const mainScene = {
+  scene: 'main',
+  background: new Background({ color: colors.purple }),
+  oneLiner: new OneLiner({
+    text: 'BREAKOUT',
+    fontSize: '80px'
+  }),
+  startButton: new Button({
+    x: canvas.width / 5 * 2,
+    width: canvas.width / 5,
+    label: 'start',
+    labelColor: colors.purple,
+    onClick: function() { if(currentScene === mainScene.scene) game.resetGame() }
+  }),
+  helpButton: new Button({
+    x: canvas.width / 5 * 2,
+    y: canvas.height / 10 * 7,
+    width: canvas.width / 5,
+    label: 'help',
+    labelColor: colors.purple,
+    onClick: function() { if(currentScene === mainScene.scene) helpScene.draw() }   // helpScene.draw
+  }),
+  draw: function() {
+    currentScene = this.scene;
+    this.background.draw();
+    this.oneLiner.draw();
+    this.startButton.draw();
+    this.helpButton.draw();
+    this.drawLineOfCircles(20, true);
+    this.drawLineOfCircles(canvas.height - 20, true);
+    this.drawLineOfCircles(15, false);
+    this.drawLineOfCircles(canvas.width - 15, false);
+  },
+  // for decorative purposes
+  drawLineOfCircles: function(a, horizontal) {
+    for(let i = 0; ; i++) {
+      ctx.beginPath();
+      // case 1: draw horizontal line
+      if(horizontal) {
+        let x = 30 * i + 15;
+        if(x > canvas.width) {
+          break;
+        }
+        ctx.arc(x, a, 3, 0, Math.PI * 2);
+      }
+      // case 2: draw vertical line
+      else {
+        let y = 30 * i + 20;
+        if(y > canvas.height) {
+          break;
+        }
+        ctx.arc(a, y, 3, 0, Math.PI * 2);
+      }
+      ctx.fillStyle = colors.yellow;
+      ctx.fill();
+      ctx.closePath();
+    }
+  }
+};
+
+document.addEventListener('click', mainScene.startButton.handleMouseClick.bind(mainScene.startButton));
+document.addEventListener('click', mainScene.helpButton.handleMouseClick.bind(mainScene.helpButton));
+
+/*====================  help scene  ==========================================*/
+const helpScene = {
+  scene: 'help',
+  background: new Background({ color: colors.orange }),
+  oneLiner: new OneLiner({
+    text: 'HOW TO PLAY:',
+    textY: canvas.height / 5,
+    color: colors.purple,
+    fontSize: '50px',
+    fontFamily: 'fontOne'
+  }),
+  multiLiner: {
+    text: "Breakout begins with 3 rows of bricks. Using a single ball, you must knock down as many bricks as possible by using the walls and/or the paddle below to ricochet the ball against the bricks and eliminate them. If your paddle misses the ball's rebound, you will lose a life. You have three lives. Let the game begin!",
+    x: canvas.width / 2,
+    y: canvas.height / 2.6,
+    maxWidth: 0.8 * canvas.width,
+    lineHeight: 25
+  },
+  drawMultiLiner: function(text, x, y, maxWidth, lineHeight) {
+    ctx.font = '30px fontOne';
+    let words = text.split(' ');
+    let line = '';
+    for(let i = 0; i < words.length; i++) {
+      let testLine = `${line} ${words[i]} `;
+      let testWidth = ctx.measureText(testLine).width;
+      if(testWidth > maxWidth && i > 0) {
+        ctx.fillText(line, x, y);
+        line = `${words[i]} `;
+        y += lineHeight;
+      } else {
+        line = testLine;
+      }
+    }
+    ctx.fillText(line, x, y);
+  },
+  backArrow: {
+    backArrow1: 40,
+    backArrow2: 45,
+    backArrow3: 80
+  },
+  drawBackArrow: function() {
+    ctx.beginPath();
+    ctx.strokeStyle = colors.purple;
+    ctx.lineWidth = 10;
+    ctx.moveTo(this.backArrow.backArrow1, this.backArrow.backArrow2);
+    ctx.lineTo(this.backArrow.backArrow3, this.backArrow.backArrow2);
+    // 2nd line
+    ctx.moveTo(this.backArrow.backArrow2, this.backArrow.backArrow1);
+    ctx.lineTo(this.backArrow.backArrow2, this.backArrow.backArrow3);
+    // 3rd line
+    ctx.moveTo(this.backArrow.backArrow2, this.backArrow.backArrow2);
+    ctx.lineTo(this.backArrow.backArrow3, this.backArrow.backArrow3);
+    ctx.stroke();
+    ctx.closePath();
+  },
+  button: new Button({
+    x: 40, // backArrow1
+    y: 40, // backArrow1
+    width: 45, // backArrow2
+    height: 45, // backArrow2
+    onClick: function() { if(currentScene === helpScene.scene) mainScene.draw() }
+  }),
+  draw: function() {
+    currentScene = this.scene;
+    this.background.draw();
+    this.oneLiner.draw();
+    this.drawMultiLiner(this.multiLiner.text, this.multiLiner.x, this.multiLiner.y, this.multiLiner.maxWidth, this.multiLiner.lineHeight);
+    this.drawBackArrow();
+  }
+};
+
+document.addEventListener('click', helpScene.button.handleMouseClick.bind(helpScene.button));
+
+// preload fonts and only then draw main scene
+document.fonts.load('10pt fontTwo').then(mainScene.draw.bind(mainScene));
+document.fonts.load('10pt fontOne').then(mainScene.draw.bind(mainScene));
