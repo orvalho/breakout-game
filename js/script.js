@@ -209,7 +209,6 @@ const game = {
     }
   },
   bricks: {
-    value: 100,  // points its worth
     rowCount: 3,
     columnCount: 8,
     offsetTop: 25, // setting a top and left offset so bricks won't start being drawn right from the edge of the canvas
@@ -219,14 +218,15 @@ const game = {
     getWidth: function() {
       return (canvas.width - 2 * this.offsetLeft + this.padding) / this.columnCount - this.padding;
     },
-    brickList: [], // holds x, y positions and status of every brick
+    brickList: [], // holds x, y positions, status and value of each brick
     getPosition: function() {
       for(let r = 0; r < this.rowCount; r++) {
         for(let c = 0; c < this.columnCount; c++) {
           this.brickList.push({
             x: c * (this.getWidth() + this.padding) + this.offsetLeft,
             y: r * (this.height + this.padding) + this.offsetTop,
-            status: 1 // status 1 - paint the brick, status 0 - don't paint it
+            status: 1, // status 1 - paint the brick, status 0 - don't paint it
+            value: 500 - r * 200 // upper row - 500 points for each brick, middle - 300, lowest - 100
           });
         }
       }
@@ -246,7 +246,7 @@ const game = {
         if (inBricksColumn && inBricksRow) {
           game.ball.dy = -game.ball.dy;
           brick.status = 0; // status 0 - don't paint the brick
-          game.score.value += game.bricks.value;
+          game.score.value += brick.value;
         }
       });
     }
@@ -254,7 +254,10 @@ const game = {
   score: {
     value: 0,
     maxValue: function() {
-      return game.bricks.rowCount * game.bricks.columnCount * game.bricks.value;
+      return ((game.bricks.brickList[0].value +
+               game.bricks.brickList[game.bricks.columnCount].value +
+               game.bricks.brickList[game.bricks.columnCount * 2].value) *
+               game.bricks.columnCount);
     },
     reset: function() {
       this.value = 0;
