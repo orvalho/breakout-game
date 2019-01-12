@@ -37,7 +37,7 @@ function mainLoop() {
       return;
     } else {
       game.ball.reset();
-      game.paddle.reset();
+      game.paddle.resetX();
     }
   }
   requestAnimationFrame(mainLoop);
@@ -183,9 +183,16 @@ const game = {
     }
   },
   paddle: {
-    x: (canvas.width - 75) / 2,
+    x: this.getX,
+    getX: function() {
+      return (canvas.width - this.width) / 2;
+    },
     y: canvas.height - 15 - 5, // 5 from bottom
+    startingWidth: 75,
     width: 75,
+    shrinkWidth: function() {
+      if(this.startingWidth === this.width) this.width = this.width / 2;
+    },
     height: 15,
     color: colors.purple,
     touchCanvasLeftEdge: function() {
@@ -204,8 +211,15 @@ const game = {
       this.moveLeft();
       this.moveRight();
     },
+    resetX: function() {
+      this.x = this.getX();
+    },
+    resetWidth: function() {
+      this.width = 75;
+    },
     reset: function() {
-      this.x = (canvas.width - 75) / 2;
+      this.resetX;
+      this.resetWidth();
     }
   },
   bricks: {
@@ -244,6 +258,11 @@ const game = {
             inBricksRow = game.ball.y > brick.y && game.ball.y < brick.y + game.bricks.height;
 
         if (inBricksColumn && inBricksRow) {
+
+          if(brick.value === game.bricks.brickList[0].value) {
+            game.paddle.shrinkWidth();
+          }
+
           game.ball.dy = -game.ball.dy;
           brick.status = 0; // status 0 - don't paint the brick
           game.score.value += brick.value;
