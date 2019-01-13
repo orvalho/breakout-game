@@ -36,7 +36,7 @@ function mainLoop() {
       gameOverScene.draw();
       return;
     } else {
-      game.ball.reset();
+      game.ball.resetPos();
       game.paddle.resetX();
     }
   }
@@ -140,6 +140,9 @@ const game = {
     y: canvas.height - 30,
     dx: 1,
     dy: -3,
+    increaseSpeed: function(multiplier) {
+      this.dy *= multiplier;
+    },
     radius: 10,
     color: colors.purple,
     move: function() {
@@ -175,9 +178,12 @@ const game = {
       this.bounceOffSideWall();
       this.bounceOffPaddle();
     },
-    reset: function() {
+    resetPos: function() {
       this.x = canvas.width / 2;
       this.y = canvas.height - 30;
+    },
+    reset: function() {
+      this.resetPos();
       this.dx = 1;
       this.dy = -3;
     }
@@ -233,6 +239,21 @@ const game = {
       return (canvas.width - 2 * this.offsetLeft + this.padding) / this.columnCount - this.padding;
     },
     brickList: [], // holds x, y positions, status and value of each brick
+    countDestroyedBricks: function(option) {
+      let destroyedBricks = 0;
+      this.brickList.forEach(function(brick, position) {
+        if(option === 'all') {
+          if (!brick.status) destroyedBricks++;
+        }
+        if(option === 'upperRow') {
+          if (!brick.status && position >= 0 && position < game.bricks.columnCount) destroyedBricks++;
+        }
+      });
+      return destroyedBricks;
+    },
+    upperRowIsHit: function(brick, position) {
+        return (!brick.status && position >= 0 && position < game.bricks.columnCount) ? true : false;
+    },
     getPosition: function() {
       for(let r = 0; r < this.rowCount; r++) {
         for(let c = 0; c < this.columnCount; c++) {
@@ -251,7 +272,7 @@ const game = {
       });
     },
     detectCollision: function() {
-      this.brickList.forEach(function(brick) {
+      this.brickList.forEach(function(brick, position) {
         if (!brick.status) return;
 
         let inBricksColumn = game.ball.x > brick.x && game.ball.x < brick.x + game.bricks.getWidth(),
@@ -259,12 +280,21 @@ const game = {
 
         if (inBricksColumn && inBricksRow) {
 
-          if(brick.value === game.bricks.brickList[0].value) {
-            game.paddle.shrinkWidth();
-          }
-
           game.ball.dy = -game.ball.dy;
           brick.status = 0; // status 0 - don't paint the brick
+
+          switch(game.bricks.countDestroyedBricks('all')) {
+            case 3: game.ball.increaseSpeed(1.3); break;
+            case 10: game.ball.increaseSpeed(1.4); break;
+          }
+
+          if(game.bricks.upperRowIsHit(brick, position)) {
+            game.paddle.shrinkWidth();
+            if (game.bricks.countDestroyedBricks('upperRow') === 1) {
+              game.ball.increaseSpeed(1.5);
+            }
+          }
+
           game.score.value += brick.value;
         }
       });
