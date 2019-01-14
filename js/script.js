@@ -423,6 +423,7 @@ const view = {
   drawScore: function() {
     ctx.font = `${game.score.fontSize} ${game.score.fontFamily}`;
     ctx.fillStyle = game.score.color;
+    ctx.textAlign = 'start'; 
     ctx.fillText(`${game.score.text} ${game.score.value}`, game.score.x, game.score.y);
   },
   drawLives: function() {
