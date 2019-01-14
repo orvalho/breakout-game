@@ -501,7 +501,7 @@ const winScene = {
 
       ctx.beginPath();
       ctx.arc(randomX, randomY, 4, 0, Math.PI * 2);
-      ctx.fillStyle = colors.yellow;
+      ctx.fillStyle = colors.red;
       ctx.fill();
       ctx.closePath();
 
