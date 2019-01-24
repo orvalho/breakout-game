@@ -171,7 +171,7 @@ const game = {
       if (this.hitSideWall()) this.dx = -this.dx;
     },
     bounceOffPaddle: function() {
-      if (this.hitPaddle()) this.dy = -this.dy;
+      if (this.hitPaddle()) this.dy = -1 * Math.abs(this.dy);
     },
     bounceOff: function() {
       this.bounceOffTop();
